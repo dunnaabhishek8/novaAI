@@ -11,7 +11,7 @@ services:
   #    (same-origin = first-party cookies, no CORS, works on Safari/iPhone)
   # ---------------------------------------------------------------------------
   - type: web
-    name: nova-chat-app
+    name: nova-chat-app-arjun
     runtime: node
     plan: free
     region: singapore          # closest Render region to India; keep both services in the same region
@@ -35,7 +35,7 @@ services:
       - key: CHATBOT_API_TOKEN     # copied automatically from the bot's generated API_ACCESS_TOKEN
         fromService:
           type: web
-          name: nova-chat-bot
+          name: nova-chat-bot-arjun
           envVarKey: API_ACCESS_TOKEN
       # Optional, add later in the dashboard to enable "Continue with Google" (then redeploy):
       #   FIREBASE_API_KEY
@@ -44,7 +44,7 @@ services:
   # 2) Chatbot: FastAPI + LangGraph (Docker). Only the web service above calls it.
   # ---------------------------------------------------------------------------
   - type: web
-    name: nova-chat-bot
+    name: nova-chat-bot-arjun
     runtime: docker
     plan: free
     region: singapore
