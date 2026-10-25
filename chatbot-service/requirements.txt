@@ -1,0 +1,17 @@
+fastapi
+uvicorn[standard]
+python-multipart
+langchain
+langchain-core
+langchain-community
+langchain-google-genai
+langchain-groq
+langchain-tavily
+langchain-text-splitters
+langgraph
+langgraph-checkpoint-postgres
+psycopg[binary,pool]
+faiss-cpu
+pypdf
+python-dotenv
+requests

@@ -1,0 +1,66 @@
+# Render Blueprint: creates both services from this one file.
+# Render dashboard -> New -> Blueprint -> pick this repo. See DEPLOY.md for the full walkthrough.
+#
+# IMPORTANT: service names become public URLs (https://<name>.onrender.com) and must be unique
+# across all of Render. Change "nova-chat-app" / "nova-chat-bot" to something of your own
+# (e.g. add your name), and keep the two references to the bot's name in sync.
+
+services:
+  # ---------------------------------------------------------------------------
+  # 1) Web: Express API + the built React app, served from ONE origin
+  #    (same-origin = first-party cookies, no CORS, works on Safari/iPhone)
+  # ---------------------------------------------------------------------------
+  - type: web
+    name: nova-chat-app
+    runtime: node
+    plan: free
+    region: singapore          # closest Render region to India; keep both services in the same region
+    buildCommand: >-
+      npm install --prefix client --include=dev &&
+      VITE_FIREBASE_API_KEY="$FIREBASE_API_KEY" npm run build --prefix client &&
+      npm install --prefix server
+    startCommand: node server/index.js
+    healthCheckPath: /api/health
+    envVars:
+      - key: NODE_VERSION
+        value: "22"
+      - key: TRUST_PROXY       # Render sits behind a proxy; needed for correct per-IP rate limits
+        value: "1"
+      - key: JWT_SECRET        # generated for you, never leaves Render
+        generateValue: true
+      - key: MONGODB_URL       # MongoDB Atlas connection string (you'll be prompted)
+        sync: false
+      - key: CHATBOT_SERVICE_URL   # public URL of the bot service, e.g. https://nova-chat-bot.onrender.com
+        sync: false
+      - key: CHATBOT_API_TOKEN     # copied automatically from the bot's generated API_ACCESS_TOKEN
+        fromService:
+          type: web
+          name: nova-chat-bot
+          envVarKey: API_ACCESS_TOKEN
+      # Optional, add later in the dashboard to enable "Continue with Google" (then redeploy):
+      #   FIREBASE_API_KEY
+
+  # ---------------------------------------------------------------------------
+  # 2) Chatbot: FastAPI + LangGraph (Docker). Only the web service above calls it.
+  # ---------------------------------------------------------------------------
+  - type: web
+    name: nova-chat-bot
+    runtime: docker
+    plan: free
+    region: singapore
+    dockerfilePath: ./chatbot-service/Dockerfile
+    dockerContext: ./chatbot-service
+    healthCheckPath: /health/live
+    envVars:
+      - key: API_ACCESS_TOKEN  # the shared secret, generated for you
+        generateValue: true
+      - key: ENABLE_DOCS       # hide the interactive API docs on the public internet
+        value: "false"
+      - key: SUPABASE_DB_URI   # Supabase *Session pooler* string (IPv4). NOT the "Direct connection".
+        sync: false
+      - key: GROQ_API_KEY
+        sync: false
+      - key: GOOGLE_API_KEY    # Gemini key from https://aistudio.google.com/apikey
+        sync: false
+      - key: TAVILY_API_KEY
+        sync: false
